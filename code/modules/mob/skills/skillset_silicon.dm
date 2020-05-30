@@ -18,3 +18,6 @@
 
 /datum/skill_buff/robot
 	limit = 1
+
+/datum/skill_buff/ai
+	limit = 1

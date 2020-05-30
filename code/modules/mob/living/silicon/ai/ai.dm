@@ -29,6 +29,11 @@ var/list/ai_verbs_default = list(
 	/mob/living/silicon/ai/proc/ai_reset_radio_keys
 )
 
+// All skills default to SKILL_EXPERT. This list overrides the default for specified skills.
+var/list/skill_overrides = list(
+	SKILL_COMPUTER = SKILL_PROF
+)
+
 //Not sure why this is necessary...
 /proc/AutoUpdateAI(obj/subject)
 	var/is_in_use = 0
@@ -186,6 +191,8 @@ var/list/ai_verbs_default = list(
 	..()
 	ai_radio = silicon_radio
 	ai_radio.myAi = src
+
+	grant_skills()
 
 /mob/living/silicon/ai/proc/on_mob_init()
 	to_chat(src, "<B>You are playing the [station_name()]'s AI. The AI cannot move, but can interact with many objects while viewing them (through cameras).</B>")
@@ -720,6 +727,20 @@ var/list/ai_verbs_default = list(
 	var/obj/item/weapon/rig/rig = src.get_rig()
 	if(rig)
 		rig.force_rest(src)
+
+/mob/living/silicon/ai/proc/grant_skills()
+	reset_skills() // reset skills in case grant_skills() is ever called more than once
+	var/min_buff = src.skillset.default_value - SKILL_MIN
+	var/max_buff = SKILL_MAX - src.skillset.default_value
+	var/list/skill_mod = list()
+	for(var/skill_type in skill_overrides)
+		skill_mod[skill_type] = Clamp(skill_overrides[skill_type] - src.skillset.default_value, min_buff, max_buff) // the buff is additive, so normalize accordingly
+	src.buff_skill(skill_mod, buff_type = /datum/skill_buff/ai)
+
+// removes all AI skill overrides
+/mob/living/silicon/ai/proc/reset_skills()
+	for(var/datum/skill_buff/buff in src.fetch_buffs_of_type(/datum/skill_buff/ai))
+		buff.remove()
 
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO
